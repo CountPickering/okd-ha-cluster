@@ -1,0 +1,78 @@
+- hosts: nodes
+  tasks:
+  - name: Install docker-1.13.1
+    yum:
+      name: docker-1.13.1
+      state: present
+
+  - name: enable docker and make sure is running
+    systemd:
+      name: docker
+      enabled: yes
+      state: started
+
+  - name: Install docker-novolume-plugin-1.13.1
+    yum:
+      name: docker-novolume-plugin-1.13.1
+      state: latest
+   
+  - name: Enable docker-novolume-plugin and make sure is running
+    systemd:
+      name: docker-novolume-plugin
+      enabled: yes
+      state: started
+
+  - name: Limit container's log file size and add insecure-registry to sysconfig/docker
+    lineinfile:
+      path: /etc/sysconfig/docker
+      line: "OPTIONS='--insecure-registry=172.30.0.0/16 --selinux-enabled --log-opt max-size=1M --log-opt max-file=3 --authorization-plugin=docker-novolume-plugin'"
+
+  - name: Restart docker
+    systemd:
+      name: docker
+      state: restarted
+
+  - name: Ansible create docker-storage-setup for sdb
+    copy:
+      dest: "/etc/sysconfig/docker-storage-setup"
+      content: |
+        DEVS=/dev/sdb
+        VG=docker-vg
+      
+  - name: Run docker-storage-setup
+    shell: docker-storage-setup
+
+  - name: Install glusterfs-fuse client
+    yum:
+      name: glusterfs-fuse
+      state: latest
+
+- hosts: master
+  tasks:
+  - name: Format Master /dev/sdd to XFS
+    shell: 'mkfs.xfs -f /dev/sdd'
+
+  - name: Mount /var/lib/etcd to /dev/sdd
+    mount:
+      path: /var/lib/etcd
+      src: /dev/sdd
+      fstype: xfs
+      state: mounted
+
+- hosts: gluster
+  tasks:
+  - name: Install centos-release-gluster
+    yum:
+      name: centos-release-gluster
+      state: latest
+
+  - name: Install glusterfs-server
+    yum:
+      name: glusterfs-server
+      state: latest
+
+  - name: enable glusterd and make sure is running
+    systemd:
+      name: glusterd
+      enabled: yes
+      state: started
