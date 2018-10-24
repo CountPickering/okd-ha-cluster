@@ -6,7 +6,6 @@ masters
 nodes
 etcd
 lb
-glusterfs
 
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
@@ -17,30 +16,13 @@ os_firewall_use_firewalld=True
 ansible_ssh_user=ansible
 openshift_deployment_type=origin
 
-openshift_storage_glusterfs_namespace=app-storage
-openshift_storage_glusterfs_storageclass=true
-openshift_storage_glusterfs_storageclass_default=false
-openshift_storage_glusterfs_block_deploy=true
-openshift_storage_glusterfs_block_host_vol_size=100
-openshift_storage_glusterfs_block_storageclass=true
-openshift_storage_glusterfs_block_storageclass_default=false
-openshift_storage_glusterfs_is_native=false
-openshift_storage_glusterfs_heketi_is_native=true
-openshift_storage_glusterfs_heketi_executor=ssh
-openshift_storage_glusterfs_heketi_ssh_port=22
-openshift_storage_glusterfs_heketi_ssh_user=ansible
-openshift_storage_glusterfs_heketi_ssh_sudo=true
-openshift_storage_glusterfs_heketi_ssh_keyfile="/home/ansible/id_rsa"
-
-#wipe gluster storage devices
-openshift_storage_glusterfs_wipe=True
 
 # uncomment the following to enable htpasswd authentication; defaults to DenyAllPasswordIdentityProvider
 #openshift_master_identity_providers=[{'name': 'htpasswd_auth', 'login': 'true', 'challenge': 'true', 'kind': 'HTPasswdPasswordIdentityProvider'}]
 # Allow all auth
 openshift_master_identity_providers=[{'name': 'allow_all', 'login': 'true', 'challenge': 'true', 'kind': 'AllowAllPasswordIdentityProvider'}]
 
-openshift_release="3.10"
+openshift_release="3.11"
 
 # Native high availability cluster method with optional load balancer.
 # If no lb group is defined installer assumes that a load balancer has
@@ -80,8 +62,4 @@ ose-master[1:3].ocp.local openshift_node_group_name='node-config-master'
 ose-app[1:3].ocp.local openshift_node_group_name='node-config-compute'
 ose-infra[1:3].ocp.local openshift_node_group_name='node-config-infra'
 
-[glusterfs]
-ose-gluster1.ocp.local glusterfs_ip='192.168.40.111' glusterfs_devices='[ "/dev/sdb" ]'
-ose-gluster2.ocp.local glusterfs_ip='192.168.40.112' glusterfs_devices='[ "/dev/sdb" ]'
-ose-gluster3.ocp.local glusterfs_ip='192.168.40.113' glusterfs_devices='[ "/dev/sdb" ]'
 
