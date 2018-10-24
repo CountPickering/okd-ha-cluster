@@ -34,7 +34,7 @@ ose-master[1:3].ocp.local
 
 [nodes]
 ose-master[1:3].ocp.local openshift_node_group_name='node-config-master'
-ose-infra[1:3].ocp.local openshift_node_group_name='node-config-infra'
+ose-infra[1:3].ocp.local openshift_node_labels="{'region': 'infra','zone': 'default'}"
 ose-app[1:3].ocp.local openshift_node_group_name='node-config-compute'
 
 [lb]
