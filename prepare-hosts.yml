@@ -76,3 +76,118 @@
       name: glusterd
       enabled: yes
       state: started
+
+- hosts: heketi
+  tasks:
+  - name: Install epel-release
+    yum:
+      name: epel-release
+      state: latest
+
+  - name: Install heketi and heketi-client
+    yum:
+      name: ["heketi","heketi-client"]
+      state: latest
+
+  - replace:
+      path: /usr/lib/systemd/system/heketi.service
+      regexp: '-config'
+      replace: '--config'
+
+  - name: reload daemon
+    systemd: daemon_reload=yes
+
+  - name: enable heketi and make sure is running
+    systemd:
+      name: heketi
+      enabled: yes
+      state: started
+
+- hosts: bst
+  tasks:
+
+  - name: Create Heketi SSH key
+    shell: "ssh-keygen -f /home/ansible/heketi_key -t rsa -N ''"
+
+  - file:
+    path: /home/ansible/heketi_key
+    owner: ansible
+    group: ansible
+    mode: 0644
+
+- hosts: heketi
+  tasks:
+
+  - name: Copy Heketi Private SSH Key to ose-gluster1
+    copy:
+     src:  /home/ansible/heketi_key
+     dest: /etc/heketi/heketi_key
+
+  - name: Copy Heketi Public SSH Key to ose-gluster1
+    copy:
+     src:  /home/ansible/heketi_key.pub
+     dest: /etc/heketi/heketi_key.pub
+
+  - replace:
+      path: /etc/heketi/heketi.json
+      regexp: 'mock'
+      replace: 'ssh'
+  
+  - replace:
+      path: /etc/heketi/heketi.json
+      regexp: 'path/to/private_key'
+      replace: '/etc/heketi/heketi_key'
+    
+  - replace:
+      path: /etc/heketi/heketi.json
+      regexp: 'sshuser'
+      replace: 'ansible'
+
+  - replace:
+      path: /etc/heketi/heketi.json
+      regexp: 'Optional: ssh port.  Default is 22'
+      replace: '22'
+
+  - replace:
+      path: /etc/heketi/heketi.json
+      regexp: 'Optional: Specify fstab file on node.  Default is /etc/fstab'
+      replace: '/etc/fstab'
+
+  - file:
+      path: /etc/heketi
+      owner: heketi
+      group: heketi
+      state: directory
+      recurse: yes
+
+  - name: restart heketi
+    systemd:
+      name: heketi
+      state: restarted
+
+  - firewalld:
+      port: 8080/tcp
+      permanent: true
+      state: enabled
+
+- hosts: gluster
+  tasks:
+
+  - authorized_key:
+      user: ansible
+      state: present
+      key: "{{ lookup('file', '/home/ansible/heketi_key.pub') }}"
+
+  - firewalld:
+      service: glusterfs
+      permanent: true
+      state: enabled
+  
+  - name: restart firewalld
+    systemd:
+      name: firewalld
+      state: restarted
+
+  - name: Curl heketi
+    shell: 'curl http://ose-gluster1.ocp.local:8080/hello'
+    
