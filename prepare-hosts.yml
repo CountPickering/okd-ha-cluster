@@ -59,6 +59,11 @@
       fstype: xfs
       state: mounted
 
+  - name: Install centos-release-gluster
+    yum:
+      name: centos-release-gluster
+      state: latest
+
 - hosts: gluster
   tasks:
   - name: Install centos-release-gluster
@@ -79,10 +84,6 @@
 
 - hosts: heketi
   tasks:
-  - name: Install epel-release
-    yum:
-      name: epel-release
-      state: latest
 
   - name: Install heketi and heketi-client
     yum:
