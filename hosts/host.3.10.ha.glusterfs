@@ -24,7 +24,7 @@ openshift_storage_glusterfs_heketi_executor=ssh
 openshift_storage_glusterfs_heketi_ssh_port=22
 openshift_storage_glusterfs_heketi_ssh_user=ansible
 openshift_storage_glusterfs_heketi_ssh_sudo=true
-openshift_storage_glusterfs_heketi_ssh_keyfile="/home/ansible/.ssh/id_rsa"
+openshift_storage_glusterfs_heketi_ssh_keyfile="/home/ansible/id_rsa.pub"
 
 #wipe gluster storage devices
 openshift_storage_glusterfs_wipe=True
