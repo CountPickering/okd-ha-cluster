@@ -42,9 +42,17 @@
   - name: Run docker-storage-setup
     shell: docker-storage-setup
 
-  - name: Install glusterfs-fuse client
+  - name: Add the dm_multipath kernel module
+    modprobe:
+      name: dm_multipath
+      state: present
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_multipath" > /etc/modules-load.d/dm_multipath.conf'
+
+  - name: Install centos-release-gluster
     yum:
-      name: glusterfs-fuse
+      name: centos-release-gluster
       state: latest
 
 - hosts: master
@@ -59,13 +67,9 @@
       fstype: xfs
       state: mounted
 
-  - name: Install centos-release-gluster
-    yum:
-      name: centos-release-gluster
-      state: latest
-
 - hosts: gluster
   tasks:
+
   - name: Install centos-release-gluster
     yum:
       name: centos-release-gluster
@@ -76,119 +80,45 @@
       name: glusterfs-server
       state: latest
 
+  - firewalld:
+      service: glusterfs
+      permanent: true
+      state: enabled
+
+  - name: Add the target_core_user kernel module
+    modprobe:
+      name: target_core_user
+      state: present
+
+  - name: Add the dm_thin_pool kernel module
+    modprobe:
+      name: dm_thin_pool
+      state: present
+
+  - name: Add the dm_snapshot kernel module
+    modprobe:
+      name: dm_snapshot
+      state: present
+
+  - name: Add the dm_mirror kernel module
+    modprobe:
+      name: dm_mirror
+      state: present
+    
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_thin_pool" > /etc/modules-load.d/dm_thin_pool.conf'
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "target_core_user" > /etc/modules-load.d/target_core_user.conf'
+    
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_snapshot" > /etc/modules-load.d/dm_snapshotl.conf'
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_mirror" > /etc/modules-load.d/dm_mirror.conf'
+
   - name: enable glusterd and make sure is running
     systemd:
       name: glusterd
       enabled: yes
       state: started
-
-- hosts: heketi
-  tasks:
-
-  - name: Install heketi and heketi-client
-    yum:
-      name: ["heketi","heketi-client"]
-      state: latest
-
-  - replace:
-      path: /usr/lib/systemd/system/heketi.service
-      regexp: '-config'
-      replace: '--config'
-
-  - name: reload daemon
-    systemd: daemon_reload=yes
-
-  - name: enable heketi and make sure is running
-    systemd:
-      name: heketi
-      enabled: yes
-      state: started
-
-- hosts: bst
-  tasks:
-
-  - name: Create Heketi SSH key
-    shell: "ssh-keygen -f /home/ansible/heketi_key -t rsa -N ''"
-
-  - file:
-    path: /home/ansible/heketi_key
-    owner: ansible
-    group: ansible
-    mode: 0644
-
-- hosts: heketi
-  tasks:
-
-  - name: Copy Heketi Private SSH Key to ose-gluster1
-    copy:
-     src:  /home/ansible/heketi_key
-     dest: /etc/heketi/heketi_key
-
-  - name: Copy Heketi Public SSH Key to ose-gluster1
-    copy:
-     src:  /home/ansible/heketi_key.pub
-     dest: /etc/heketi/heketi_key.pub
-
-  - replace:
-      path: /etc/heketi/heketi.json
-      regexp: 'mock'
-      replace: 'ssh'
-  
-  - replace:
-      path: /etc/heketi/heketi.json
-      regexp: 'path/to/private_key'
-      replace: '/etc/heketi/heketi_key'
-    
-  - replace:
-      path: /etc/heketi/heketi.json
-      regexp: 'sshuser'
-      replace: 'ansible'
-
-  - replace:
-      path: /etc/heketi/heketi.json
-      regexp: 'Optional: ssh port.  Default is 22'
-      replace: '22'
-
-  - replace:
-      path: /etc/heketi/heketi.json
-      regexp: 'Optional: Specify fstab file on node.  Default is /etc/fstab'
-      replace: '/etc/fstab'
-
-  - file:
-      path: /etc/heketi
-      owner: heketi
-      group: heketi
-      state: directory
-      recurse: yes
-
-  - name: restart heketi
-    systemd:
-      name: heketi
-      state: restarted
-
-  - firewalld:
-      port: 8080/tcp
-      permanent: true
-      state: enabled
-
-- hosts: gluster
-  tasks:
-
-  - authorized_key:
-      user: ansible
-      state: present
-      key: "{{ lookup('file', '/home/ansible/heketi_key.pub') }}"
-
-  - firewalld:
-      service: glusterfs
-      permanent: true
-      state: enabled
-  
-  - name: restart firewalld
-    systemd:
-      name: firewalld
-      state: restarted
-
-  - name: Curl heketi
-    shell: 'curl http://ose-gluster1.ocp.local:8080/hello'
-    
