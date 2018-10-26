@@ -80,6 +80,11 @@
       name: glusterfs-server
       state: latest
 
+  - name: Install gluster-block
+    yum:
+      name: gluster-block
+      state: latest
+
   - firewalld:
       service: glusterfs
       permanent: true
@@ -120,5 +125,11 @@
   - name: enable glusterd and make sure is running
     systemd:
       name: glusterd
+      enabled: yes
+      state: started
+
+  - name: enable gluster-blockd and make sure is running
+    systemd:
+      name: gluster-blockd
       enabled: yes
       state: started

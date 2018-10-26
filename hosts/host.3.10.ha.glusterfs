@@ -84,4 +84,3 @@ ose-infra[1:3].ocp.local openshift_node_group_name='node-config-infra'
 ose-gluster1.ocp.local glusterfs_ip='192.168.40.111' glusterfs_devices='[ "/dev/sdb" ]'
 ose-gluster2.ocp.local glusterfs_ip='192.168.40.112' glusterfs_devices='[ "/dev/sdb" ]'
 ose-gluster3.ocp.local glusterfs_ip='192.168.40.113' glusterfs_devices='[ "/dev/sdb" ]'
-
