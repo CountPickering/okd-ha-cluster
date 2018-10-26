@@ -1,0 +1,64 @@
+- hosts: gluster
+  tasks:
+
+  # It is recommended to create a separate /var partition that is large enough (50GB - 100GB) 
+  # for log files, geo-replication related miscellaneous files, and other files.
+  # https://access.redhat.com/documentation/en-us/red_hat_gluster_storage/3.3/html-single/container-native_storage_for_openshift_container_platform/#OCP_Req_for_CNS
+
+  - name: Format Gluster /dev/sdc to XFS For Logfiles
+    shell: 'mkfs.xfs -f /dev/sdc'
+
+  - name: Mount /var/ to /dev/sdc
+    mount:
+      path: /var
+      src: /dev/sdc
+      fstype: xfs
+      state: mounted
+
+  - name: Install centos-release-gluster
+    yum:
+      name: centos-release-gluster
+      state: latest
+
+  - name: Install glusterfs-server
+    yum:
+      name: glusterfs-server
+      state: latest
+
+  - name: Install gluster-block
+    yum:
+      name: glusterfs-block
+      state: latest
+
+  - firewalld:
+    service: glusterfs
+    permanent: true
+    state: enabled
+
+  - name: Add the target_core_user kernel module
+    modprobe:
+      name: target_core_user
+      state: present
+
+  - name: Add the target_core_user kernel module
+    modprobe:
+      name: dm_thin_pool
+      state: present
+    
+  - name: To ensure these dm_thin_pool is persisted across reboots
+    shell: 'echo "dm_thin_pool" > /etc/modules-load.d/dm_thin_pool.conf'
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "target_core_user" > /etc/modules-load.d/target_core_user.conf'
+
+  - name: enable glusterd and make sure is running
+    systemd:
+      name: glusterd
+      enabled: yes
+      state: started
+
+  - name: enable gluster-blockd and make sure is running
+    systemd:
+      name: gluster-blockd
+      enabled: yes
+      state: started
