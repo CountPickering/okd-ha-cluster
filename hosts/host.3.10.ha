@@ -9,6 +9,10 @@ lb
 
 # Set variables common for all OSEv3 hosts
 [OSEv3:vars]
+
+#Force firealld
+os_firewall_use_firewalld=True
+
 ansible_ssh_user=ansible
 openshift_deployment_type=origin
 
@@ -28,18 +32,24 @@ openshift_release="3.10"
 openshift_master_cluster_method=native
 openshift_master_cluster_hostname=openshift-internal.ocp.local
 openshift_master_cluster_public_hostname=openshift-cluster.ocp.local
+openshift_master_default_subdomain=apps.ocp.local
+
+# Manage openshift example imagestreams and templates during install and upgrade
+openshift_install_examples=true
+
+# Specify a list of block devices to be formatted and mounted on the nodes
+# during prerequisites.yml. For each hash, "device", "path", "filesystem" are
+# required. To add devices only on certain classes of node, redefine
+# container_runtime_extra_storage as a group var.
+container_runtime_extra_storage='[{"device":"/dev/sdc","path":"/var/lib/origin/openshift.local.volumes","filesystem":"xfs","options":"gquota"}]'
 
 # host group for masters
 [masters]
-ose-master1.ocp.local
-ose-master2.ocp.local
-ose-master3.ocp.local
+ose-master[1:3].ocp.local
 
 # host group for etcd
 [etcd]
-ose-master1.ocp.local
-ose-master2.ocp.local
-ose-master3.ocp.local
+ose-master[1:3].ocp.local
 
 # Specify load balancer host
 [lb]
