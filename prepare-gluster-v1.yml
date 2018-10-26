@@ -5,16 +5,6 @@
   # for log files, geo-replication related miscellaneous files, and other files.
   # https://access.redhat.com/documentation/en-us/red_hat_gluster_storage/3.3/html-single/container-native_storage_for_openshift_container_platform/#OCP_Req_for_CNS
 
-  - name: Format Gluster /dev/sdc to XFS For Logfiles
-    shell: 'mkfs.xfs -f /dev/sdc'
-
-  - name: Mount /var/ to /dev/sdc
-    mount:
-      path: /var
-      src: /dev/sdc
-      fstype: xfs
-      state: mounted
-
   - name: Install centos-release-gluster
     yum:
       name: centos-release-gluster
@@ -31,9 +21,9 @@
       state: latest
 
   - firewalld:
-    service: glusterfs
-    permanent: true
-    state: enabled
+      service: glusterfs
+      permanent: true
+      state: enabled
 
   - name: Add the target_core_user kernel module
     modprobe:
@@ -49,7 +39,7 @@
     shell: 'echo "dm_thin_pool" > /etc/modules-load.d/dm_thin_pool.conf'
 
   - name: To ensure these operations are persisted across reboots
-    shell: 'echo "target_core_user" > /etc/modules-load.d/target_core_user.conf'
+    shell: 'echo "target_core_user" > /etc/modules-load.d/dm_thin_pool.conf'
 
   - name: enable glusterd and make sure is running
     systemd:
