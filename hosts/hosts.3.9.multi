@@ -19,6 +19,10 @@ openshift_master_cluster_hostname=openshift-internal.ocp.local
 openshift_master_cluster_public_hostname=openshift-cluster.ocp.local
 openshift_master_default_subdomain=apps.ocp.local
 
+os_sdn_network_plugin_name='redhat/openshift-ovs-multitenant'
+osm_cluster_network_cidr=10.128.0.0/14
+openshift_portal_net=172.30.0.0/16
+
 # If ansible_user is not root, ansible_become must be set to true and the
 # user must be configured for passwordless sudo
 ansible_become=yes
