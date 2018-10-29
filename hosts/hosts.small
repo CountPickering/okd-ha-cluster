@@ -1,0 +1,40 @@
+# Create an OSEv3 group that contains the masters and nodes groups
+[OSEv3:children]
+masters
+etcd
+nodes
+lb
+
+[OSEv3:vars]
+ansible_ssh_user=ansible
+openshift_deployment_type=origin
+
+openshift_release="3.9"
+
+os_firewall_use_firewalld=True
+
+openshift_master_default_subdomain=apps.ocp.local
+
+# If ansible_user is not root, ansible_become must be set to true and the
+# user must be configured for passwordless sudo
+ansible_become=yes
+
+# Manage openshift example imagestreams and templates during install and upgrade
+openshift_install_examples=true
+
+# Allow all auth
+openshift_master_identity_providers=[{'name': 'allow_all', 'login': 'true', 'challenge': 'true', 'kind': 'AllowAllPasswordIdentityProvider'}]
+
+[masters]
+ose-master1.ocp.local
+
+[etcd]
+ose-master1.ocp.local
+
+[nodes]
+ose-master1.ocp.local openshift_node_group_name='node-config-master'
+ose-infra1.ocp.local openshift_node_group_name='node-config-infra'
+ose-app1.ocp.local openshift_node_group_name='node-config-compute'
+
+[lb]
+ose-lb.ocp.local

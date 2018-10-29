@@ -1,0 +1,135 @@
+- hosts: nodes
+  tasks:
+  - name: Install docker-1.13.1
+    yum:
+      name: docker-1.13.1
+      state: present
+
+  - name: enable docker and make sure is running
+    systemd:
+      name: docker
+      enabled: yes
+      state: started
+
+  - name: Install docker-novolume-plugin-1.13.1
+    yum:
+      name: docker-novolume-plugin-1.13.1
+      state: latest
+   
+  - name: Enable docker-novolume-plugin and make sure is running
+    systemd:
+      name: docker-novolume-plugin
+      enabled: yes
+      state: started
+
+  - name: Limit container's log file size and add insecure-registry to sysconfig/docker
+    lineinfile:
+      path: /etc/sysconfig/docker
+      line: "OPTIONS='--insecure-registry=172.30.0.0/16 --selinux-enabled --log-opt max-size=1M --log-opt max-file=3 --authorization-plugin=docker-novolume-plugin'"
+
+  - name: Restart docker
+    systemd:
+      name: docker
+      state: restarted
+
+  - name: Ansible create docker-storage-setup for sdb
+    copy:
+      dest: "/etc/sysconfig/docker-storage-setup"
+      content: |
+        DEVS=/dev/sdb
+        VG=docker-vg
+      
+  - name: Run docker-storage-setup
+    shell: docker-storage-setup
+
+  - name: Add the dm_multipath kernel module
+    modprobe:
+      name: dm_multipath
+      state: present
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_multipath" > /etc/modules-load.d/dm_multipath.conf'
+
+  - name: Install centos-release-gluster
+    yum:
+      name: centos-release-gluster
+      state: latest
+
+- hosts: master
+  tasks:
+  - name: Format Master /dev/sdd to XFS
+    shell: 'mkfs.xfs -f /dev/sdd'
+
+  - name: Mount /var/lib/etcd to /dev/sdd
+    mount:
+      path: /var/lib/etcd
+      src: /dev/sdd
+      fstype: xfs
+      state: mounted
+
+- hosts: gluster
+  tasks:
+
+  - name: Install centos-release-gluster
+    yum:
+      name: centos-release-gluster
+      state: latest
+
+  - name: Install glusterfs-server
+    yum:
+      name: glusterfs-server
+      state: latest
+
+  - name: Install gluster-block
+    yum:
+      name: gluster-block
+      state: latest
+
+  - firewalld:
+      service: glusterfs
+      permanent: true
+      state: enabled
+
+  - name: Add the target_core_user kernel module
+    modprobe:
+      name: target_core_user
+      state: present
+
+  - name: Add the dm_thin_pool kernel module
+    modprobe:
+      name: dm_thin_pool
+      state: present
+
+  - name: Add the dm_snapshot kernel module
+    modprobe:
+      name: dm_snapshot
+      state: present
+
+  - name: Add the dm_mirror kernel module
+    modprobe:
+      name: dm_mirror
+      state: present
+    
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_thin_pool" > /etc/modules-load.d/dm_thin_pool.conf'
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "target_core_user" > /etc/modules-load.d/target_core_user.conf'
+    
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_snapshot" > /etc/modules-load.d/dm_snapshotl.conf'
+
+  - name: To ensure these operations are persisted across reboots
+    shell: 'echo "dm_mirror" > /etc/modules-load.d/dm_mirror.conf'
+
+  - name: enable glusterd and make sure is running
+    systemd:
+      name: glusterd
+      enabled: yes
+      state: started
+
+  - name: enable gluster-blockd and make sure is running
+    systemd:
+      name: gluster-blockd
+      enabled: yes
+      state: started
