@@ -1,0 +1,51 @@
+# Create an OSEv3 group that contains the masters and nodes groups
+[OSEv3:children]
+masters
+etcd
+nodes
+lb
+
+[OSEv3:vars]
+ansible_ssh_user=ansible
+openshift_deployment_type=origin
+
+
+openshift_release="3.9"
+
+os_firewall_use_firewalld=True
+
+openshift_master_cluster_method=native
+openshift_master_cluster_hostname=openshift-internal.ocp.local
+openshift_master_cluster_public_hostname=openshift-cluster.ocp.local
+openshift_master_default_subdomain=apps.ocp.local
+
+# If ansible_user is not root, ansible_become must be set to true and the
+# user must be configured for passwordless sudo
+ansible_become=yes
+ansible_ssh_user=ansible
+# Manage openshift example imagestreams and templates during install and upgrade
+openshift_install_examples=true
+
+container_runtime_extra_storage='[{"device":"/dev/sdc","path":"/var/lib/origin/openshift.local.volumes","filesystem":"xfs
+","options":"gquota"}]'
+# Allow all auth
+openshift_master_identity_providers=[{'name': 'allow_all', 'login': 'true', 'challenge': 'true', 'kind': 'AllowAllPasswor
+dIdentityProvider'}]
+
+[masters]
+ose-master1.ocp.local
+ose-master2.ocp.local
+ose-master3.ocp.local
+
+[etcd]
+ose-master1.ocp.local
+ose-master2.ocp.local
+ose-master3.ocp.local
+
+[nodes]
+ose-master[1:3].ocp.local
+ose-infra[1:3].ocp.local openshift_node_labels="{'region': 'infra', 'zone': 'default'}"
+ose-app[1:3].ocp.local openshift_node_labels="{'region': 'primary', 'zone': 'default'}"
+
+[lb]
+ose-lb.ocp.local
